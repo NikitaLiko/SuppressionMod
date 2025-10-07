@@ -16,6 +16,14 @@ public class Config {
     public static final ForgeConfigSpec.DoubleValue VIGNETTE_MAX_ALPHA;
     public static final ForgeConfigSpec.BooleanValue ENABLE_VELOCITY_SCALING;
     public static final ForgeConfigSpec.BooleanValue ENABLE_NONLINEAR_ACCUMULATION;
+    public static final ForgeConfigSpec.IntValue EXPLOSION_BASE_IMPACT;
+    public static final ForgeConfigSpec.DoubleValue EXPLOSION_MAX_RANGE;
+    public static final ForgeConfigSpec.IntValue NEAR_IMPACT_BASE_IMPACT;
+    public static final ForgeConfigSpec.DoubleValue NEAR_IMPACT_MAX_RANGE;
+    public static final ForgeConfigSpec.DoubleValue UI_TINT_STRENGTH;
+    public static final ForgeConfigSpec.DoubleValue UI_VIGNETTE_STRENGTH;
+    public static final ForgeConfigSpec.DoubleValue UI_FLASH_STRENGTH;
+    public static final ForgeConfigSpec.DoubleValue UI_GRAIN_STRENGTH;
 
     static {
         BUILDER.push("Suppression Mod - Server Configuration");
@@ -70,6 +78,44 @@ public class Config {
         ENABLE_NONLINEAR_ACCUMULATION = BUILDER
                 .comment("Нелинейное накопление (3+ пули подряд усиливают эффект)")
                 .define("enableNonlinearAccumulation", true);
+        BUILDER.pop();
+
+        BUILDER.push("Explosions");
+        EXPLOSION_BASE_IMPACT = BUILDER
+                .comment("Base suppression to apply when an explosion happens near the player")
+                .defineInRange("explosionBaseImpact", 45, 5, 200);
+
+        EXPLOSION_MAX_RANGE = BUILDER
+                .comment("Maximum range in blocks for explosion suppression")
+                .defineInRange("explosionMaxRange", 14.0, 4.0, 48.0);
+        BUILDER.pop();
+
+        BUILDER.push("Impacts");
+        NEAR_IMPACT_BASE_IMPACT = BUILDER
+                .comment("Suppression applied when a projectile impacts close to the player")
+                .defineInRange("nearImpactBaseImpact", 28, 5, 150);
+
+        NEAR_IMPACT_MAX_RANGE = BUILDER
+                .comment("Maximum distance in blocks to react to projectile impacts")
+                .defineInRange("nearImpactMaxRange", 8.0, 2.0, 24.0);
+        BUILDER.pop();
+
+        BUILDER.push("ClientVisuals");
+        UI_TINT_STRENGTH = BUILDER
+                .comment("Overall strength for the color tint overlay (0-1 range recommended)")
+                .defineInRange("uiTintStrength", 0.75, 0.0, 1.5);
+
+        UI_VIGNETTE_STRENGTH = BUILDER
+                .comment("Intensity multiplier for edge darkening vignette")
+                .defineInRange("uiVignetteStrength", 0.8, 0.0, 1.5);
+
+        UI_FLASH_STRENGTH = BUILDER
+                .comment("Multiplier for suppression flash/bloom contribution")
+                .defineInRange("uiFlashStrength", 0.65, 0.0, 1.5);
+
+        UI_GRAIN_STRENGTH = BUILDER
+                .comment("Multiplier for the film grain overlay intensity")
+                .defineInRange("uiGrainStrength", 0.55, 0.0, 1.5);
         BUILDER.pop();
 
         BUILDER.pop();

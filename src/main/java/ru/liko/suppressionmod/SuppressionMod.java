@@ -19,6 +19,7 @@ public class SuppressionMod {
             BulletSuppressionHandler handler = new BulletSuppressionHandler();
             MinecraftForge.EVENT_BUS.register(handler);
             MinecraftForge.EVENT_BUS.register(new BulletTracker(handler));
+            MinecraftForge.EVENT_BUS.register(new EnvironmentalSuppressionTracker(handler));
             SuppressionOverlay.setHandler(handler);
         }
     }

@@ -21,6 +21,7 @@ public class BulletTracker {
 
     private static final double NEAR_MISS_THRESHOLD = 3.5;
     private static final double MIN_MOVE_PER_TICK = 0.02;
+    private static final double MIN_IMPACT_SPEED = 0.03;
 
     private static final Set<ResourceLocation> ALLOWED_TYPES = new HashSet<>();
     private final Map<UUID, Tracked> tracked = new HashMap<>();
@@ -42,7 +43,38 @@ public class BulletTracker {
     @SubscribeEvent
     public void onLeave(EntityLeaveLevelEvent e) {
         if (!e.getLevel().isClientSide()) return;
-        tracked.remove(e.getEntity().getUUID());
+        Entity entity = e.getEntity();
+        Tracked t = tracked.remove(entity.getUUID());
+        if (t == null || !isTaczBullet(entity.getType())) return;
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.player == null || mc.level == null) return;
+
+        if (entity instanceof Projectile proj) {
+            Entity owner = proj.getOwner();
+            if (owner != null && owner.getUUID().equals(mc.player.getUUID())) {
+                return;
+            }
+        }
+
+        Vec3 eye = mc.player.getEyePosition(1.0f);
+        Vec3 impactPos = entity.position();
+        if (impactPos == null) {
+            impactPos = t.prev;
+        } else if (t.prev != null) {
+            impactPos = impactPos.add(t.prev).scale(0.5);
+        }
+
+        if (impactPos == null) return;
+
+        double distance = impactPos.distanceTo(eye);
+        double maxRange = Config.NEAR_IMPACT_MAX_RANGE.get();
+        if (distance > maxRange) return;
+
+        double speed = Math.max(t.lastSpeed, entity.getDeltaMovement().length());
+        if (speed < MIN_IMPACT_SPEED) return;
+
+        suppression.addProjectileImpact(distance, speed);
     }
 
     @SubscribeEvent
@@ -81,6 +113,7 @@ public class BulletTracker {
             Vec3 prev = t.prev;
             double velocity = curr.distanceTo(prev);
             double camDist = curr.distanceTo(eye);
+            t.lastSpeed = velocity;
 
             if (camDist > maxRange || velocity < MIN_MOVE_PER_TICK) {
                 t.prev = curr;
@@ -128,10 +161,12 @@ public class BulletTracker {
         Vec3 prev;
         int cooldown = 0;
         int age = 0;
+        double lastSpeed = 0.0;
         Tracked(Entity e, Vec3 p) {
             this.uuid = e.getUUID();
             this.entity = e;
             this.prev = p;
+            this.lastSpeed = e.getDeltaMovement().length();
         }
     }
 }

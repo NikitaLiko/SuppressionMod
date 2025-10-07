@@ -18,6 +18,7 @@ public class BulletSuppressionHandler {
     private int targetLevel = 0;
     private int recentHitCount = 0;
     private int hitCounterTicks = 0;
+    private int shockFlashTicks = 0;
 
     @SubscribeEvent
     public void onClientTick(TickEvent.ClientTickEvent e) {
@@ -47,14 +48,16 @@ public class BulletSuppressionHandler {
             }
         }
 
+        if (shockFlashTicks > 0) {
+            shockFlashTicks--;
+        }
+
         if (suppressionLevel > 0) {
             applySquadShake(mc.player, suppressionLevel, maxLevel);
         }
     }
 
     public void addSuppressionImpact(int baseImpact, double distance, double velocity) {
-        int maxLevel = Config.MAX_SUPPRESSION_LEVEL.get();
-
         double maxDist = Config.MAX_DETECTION_RANGE.get();
         double distanceFactor = Math.max(0.35, 1.0 - (distance / maxDist));
 
@@ -70,9 +73,37 @@ public class BulletSuppressionHandler {
             impact = (int)(impact * Math.pow(multiplier, Math.min(recentHitCount - 1, 4)));
         }
 
-        targetLevel = Math.min(maxLevel, targetLevel + impact);
-        recentHitCount++;
-        hitCounterTicks = 40;
+        int flashBoost = 3 + (int)(distanceFactor * 5);
+        accumulateSuppression(impact, true, flashBoost);
+    }
+
+    public void addProjectileImpact(double distance, double velocity) {
+        double maxDist = Config.NEAR_IMPACT_MAX_RANGE.get();
+        if (distance > maxDist) return;
+
+        double distanceFactor = Math.max(0.2, 1.0 - (distance / maxDist));
+        double speedFactor = 1.0 + Math.min(1.5, velocity * 3.2);
+
+        int baseImpact = Config.NEAR_IMPACT_BASE_IMPACT.get();
+        int impact = (int)(baseImpact * distanceFactor * speedFactor);
+        int flashBoost = 8 + (int)(distanceFactor * 10);
+
+        accumulateSuppression(impact, true, flashBoost);
+    }
+
+    public void addExplosionShock(double distance, float volume) {
+        double maxDist = Config.EXPLOSION_MAX_RANGE.get();
+        if (distance > maxDist) return;
+
+        double distanceFactor = Math.max(0.0, 1.0 - (distance / maxDist));
+        double shaped = Math.pow(distanceFactor, 1.35);
+        double volumeFactor = 0.85 + Math.min(1.5, volume) * 0.45;
+
+        int baseImpact = Config.EXPLOSION_BASE_IMPACT.get();
+        int impact = (int)(baseImpact * shaped * volumeFactor);
+        int flashBoost = 12 + (int)(distanceFactor * 14);
+
+        accumulateSuppression(impact, false, flashBoost);
     }
 
     private void applySquadShake(Player p, int level, int maxLevel) {
@@ -89,5 +120,30 @@ public class BulletSuppressionHandler {
         p.setYRot(p.getYRot() + yaw);
     }
 
+    private void accumulateSuppression(int impact, boolean trackBurst, int flashBoost) {
+        if (impact <= 0) return;
+        int maxLevel = Config.MAX_SUPPRESSION_LEVEL.get();
+        targetLevel = Math.min(maxLevel, targetLevel + impact);
+
+        if (trackBurst) {
+            recentHitCount++;
+            hitCounterTicks = 40;
+        }
+
+        if (flashBoost > 0) {
+            shockFlashTicks = Math.min(80, shockFlashTicks + flashBoost);
+        }
+    }
+
     public int getSuppressionLevel() { return suppressionLevel; }
+
+    public float getSuppressionRatio() {
+        int maxLevel = Config.MAX_SUPPRESSION_LEVEL.get();
+        if (maxLevel <= 0) return 0.0f;
+        return Math.min(1.0f, suppressionLevel / (float)maxLevel);
+    }
+
+    public float getShockFlashIntensity() {
+        return Math.min(1.0f, shockFlashTicks / 40.0f);
+    }
 }

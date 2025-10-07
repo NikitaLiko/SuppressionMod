@@ -8,6 +8,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import ru.liko.suppressionmod.client.ClientConfigState;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -47,7 +48,7 @@ public class EnvironmentalSuppressionTracker {
         double sy = sound.getY();
         double sz = sound.getZ();
         double distance = Math.sqrt(player.distanceToSqr(sx, sy, sz));
-        double maxRange = Config.EXPLOSION_MAX_RANGE.get();
+        double maxRange = ClientConfigState.explosionMaxRange();
         if (distance > maxRange) return;
 
         float volume = sound.getVolume();

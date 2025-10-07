@@ -9,7 +9,7 @@ import ru.liko.suppressionmod.SuppressionMod;
 
 public final class NetworkHandler {
 
-    private static final String PROTOCOL_VERSION = "1";
+    public static final String PROTOCOL_VERSION = "1";
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(SuppressionMod.MOD_ID, "main"),
             () -> PROTOCOL_VERSION,
@@ -28,10 +28,18 @@ public final class NetworkHandler {
                 SuppressionImpactPacket::encode,
                 SuppressionImpactPacket::decode,
                 SuppressionImpactPacket::handle);
+        CHANNEL.registerMessage(packetId++, SuppressionSettingsPacket.class,
+                SuppressionSettingsPacket::encode,
+                SuppressionSettingsPacket::decode,
+                SuppressionSettingsPacket::handle);
         initialized = true;
     }
 
     public static <MSG> void sendTo(ServerPlayer player, MSG message) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), message);
+    }
+
+    public static <MSG> void sendToAll(MSG message) {
+        CHANNEL.send(PacketDistributor.ALL.noArg(), message);
     }
 }

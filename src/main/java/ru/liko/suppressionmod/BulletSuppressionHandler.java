@@ -6,6 +6,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import ru.liko.suppressionmod.client.ClientConfigState;
 
 import java.util.Random;
 
@@ -26,9 +27,9 @@ public class BulletSuppressionHandler {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.isPaused() || mc.player == null || mc.level == null) return;
 
-        int maxLevel = Config.MAX_SUPPRESSION_LEVEL.get();
-        int recovery = Config.RECOVERY_RATE.get();
-        int targetDecay = Config.TARGET_DECAY_RATE.get();
+        int maxLevel = ClientConfigState.maxSuppressionLevel();
+        int recovery = ClientConfigState.recoveryRate();
+        int targetDecay = ClientConfigState.targetDecayRate();
 
         if (suppressionLevel < targetLevel) {
             int ramp = Math.max(4, (targetLevel - suppressionLevel) / 5);
@@ -58,57 +59,57 @@ public class BulletSuppressionHandler {
     }
 
     public void addSuppressionImpact(int baseImpact, double distance, double velocity) {
-        double maxDist = Config.MAX_DETECTION_RANGE.get();
+        double maxDist = ClientConfigState.maxDetectionRange();
         double distanceFactor = Math.max(0.35, 1.0 - (distance / maxDist));
 
         double velocityFactor = 1.0;
-        if (Config.ENABLE_VELOCITY_SCALING.get()) {
+        if (ClientConfigState.enableVelocityScaling()) {
             velocityFactor = Math.min(1.8, 0.9 + velocity * 2.0);
         }
 
         int impact = (int)(baseImpact * distanceFactor * velocityFactor);
 
-        if (Config.ENABLE_NONLINEAR_ACCUMULATION.get() && recentHitCount >= 2) {
-            double multiplier = Config.ACCUMULATION_MULTIPLIER.get();
+        if (ClientConfigState.enableNonlinearAccumulation() && recentHitCount >= 2) {
+            double multiplier = ClientConfigState.accumulationMultiplier();
             impact = (int)(impact * Math.pow(multiplier, Math.min(recentHitCount - 1, 4)));
         }
 
-        int flashBoost = 3 + (int)(distanceFactor * 5);
+        int flashBoost = 2 + (int)(distanceFactor * 4);
         accumulateSuppression(impact, true, flashBoost);
     }
 
     public void addProjectileImpact(double distance, double velocity) {
-        double maxDist = Config.NEAR_IMPACT_MAX_RANGE.get();
+        double maxDist = ClientConfigState.nearImpactMaxRange();
         if (distance > maxDist) return;
 
         double distanceFactor = Math.max(0.2, 1.0 - (distance / maxDist));
         double speedFactor = 1.0 + Math.min(1.5, velocity * 3.2);
 
-        int baseImpact = Config.NEAR_IMPACT_BASE_IMPACT.get();
+        int baseImpact = ClientConfigState.nearImpactBaseImpact();
         int impact = (int)(baseImpact * distanceFactor * speedFactor);
-        int flashBoost = 8 + (int)(distanceFactor * 10);
+        int flashBoost = 6 + (int)(distanceFactor * 8);
 
         accumulateSuppression(impact, true, flashBoost);
     }
 
     public void addExplosionShock(double distance, float volume) {
-        double maxDist = Config.EXPLOSION_MAX_RANGE.get();
+        double maxDist = ClientConfigState.explosionMaxRange();
         if (distance > maxDist) return;
 
         double distanceFactor = Math.max(0.0, 1.0 - (distance / maxDist));
         double shaped = Math.pow(distanceFactor, 1.35);
         double volumeFactor = 0.85 + Math.min(1.5, volume) * 0.45;
 
-        int baseImpact = Config.EXPLOSION_BASE_IMPACT.get();
+        int baseImpact = ClientConfigState.explosionBaseImpact();
         int impact = (int)(baseImpact * shaped * volumeFactor);
-        int flashBoost = 12 + (int)(distanceFactor * 14);
+        int flashBoost = 10 + (int)(distanceFactor * 12);
 
         accumulateSuppression(impact, false, flashBoost);
     }
 
     private void applySquadShake(Player p, int level, int maxLevel) {
         float t = Math.min(level / (float)maxLevel, 1.0f);
-        float baseIntensity = (float)(t * Config.SHAKE_INTENSITY.get());
+        float baseIntensity = (float)(t * ClientConfigState.shakeIntensity());
 
         float stress = (float)Math.pow(t, 1.2);
         float intensity = baseIntensity * (0.7f + 0.3f * stress);
@@ -122,7 +123,7 @@ public class BulletSuppressionHandler {
 
     private void accumulateSuppression(int impact, boolean trackBurst, int flashBoost) {
         if (impact <= 0) return;
-        int maxLevel = Config.MAX_SUPPRESSION_LEVEL.get();
+        int maxLevel = ClientConfigState.maxSuppressionLevel();
         targetLevel = Math.min(maxLevel, targetLevel + impact);
 
         if (trackBurst) {
@@ -131,7 +132,7 @@ public class BulletSuppressionHandler {
         }
 
         if (flashBoost > 0) {
-            shockFlashTicks = Math.min(80, shockFlashTicks + flashBoost);
+            shockFlashTicks = Math.min(60, shockFlashTicks + flashBoost);
         }
     }
 

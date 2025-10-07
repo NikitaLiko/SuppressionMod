@@ -13,6 +13,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.event.entity.EntityLeaveLevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import ru.liko.suppressionmod.client.ClientConfigState;
 
 import java.util.*;
 
@@ -68,7 +69,7 @@ public class BulletTracker {
         if (impactPos == null) return;
 
         double distance = impactPos.distanceTo(eye);
-        double maxRange = Config.NEAR_IMPACT_MAX_RANGE.get();
+        double maxRange = ClientConfigState.nearImpactMaxRange();
         if (distance > maxRange) return;
 
         double speed = Math.max(t.lastSpeed, entity.getDeltaMovement().length());
@@ -86,7 +87,7 @@ public class BulletTracker {
         Player pl = mc.player;
         UUID local = pl.getUUID();
         Vec3 eye = pl.getEyePosition(1.0f);
-        double maxRange = Config.MAX_DETECTION_RANGE.get();
+        double maxRange = ClientConfigState.maxDetectionRange();
 
         Iterator<Map.Entry<UUID, Tracked>> it = tracked.entrySet().iterator();
         while (it.hasNext()) {
@@ -123,7 +124,7 @@ public class BulletTracker {
             double d = segmentPointDistance(prev, curr, eye);
 
             if (t.cooldown <= 0 && d <= NEAR_MISS_THRESHOLD) {
-                int baseImpact = Config.SINGLE_BULLET_IMPACT.get();
+                int baseImpact = ClientConfigState.singleBulletImpact();
                 suppression.addSuppressionImpact(baseImpact, d, velocity);
                 t.cooldown = 4;
             }
